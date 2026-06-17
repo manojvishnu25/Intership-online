@@ -1,0 +1,31 @@
+email,urls,keyword_count,exclamation_marks,urgent_keywords,suspicious_urls,misspelled_words,all_caps_words,phishing
+Urgent: Verify your PayPal account now! Click here immediately to confirm your password and prevent account suspension.,paypal-verify-123.tk,4,3,3,1,1,2,1
+CONFIRM YOUR BANKING DETAILS NOW!!! Your account will be closed in 24 hours. Update payment method immediately!!!,bank-security-update-verify.xyz,5,5,4,1,0,5,1
+Amazon Security Alert: Unusual activity detected. Verify your identity by clicking the link below to secure your account.,amaz0n-security-check.ru,4,1,2,1,0,1,1
+Congratulations! You have won a FREE gift card worth $500. Click here to claim your prize now before it expires!,claim-prize-gift.tk,4,2,2,1,0,2,1
+Action Required: Your Apple ID will be locked in 48 hours. Verify your account details immediately by clicking below.,apple-id-verification-secure.pw,4,1,3,1,0,1,1
+Important Notice: Your Google account requires immediate verification. Click link to confirm password and protect your account.,g00gle-verify-now.net,4,1,2,1,0,1,1
+Claim your $1000 Target Gift Card NOW!!! Limited time offer. Click here to redeem your card immediately!!!,target-giftcard-claim-here.xyz,5,4,3,1,0,3,1
+URGENT: Your credit card will be BLOCKED! Confirm your banking details immediately. Do not ignore this message!!!,bank-security-verify-urgent.ru,5,4,4,1,0,4,1
+PayPal Security: Unusual login detected. Confirm your account by clicking the link below within 24 hours.,paypal-security-confirm.tk,3,0,2,1,0,1,1
+"You've inherited $2,500,000!!! Reply to this email with your banking details to claim your inheritance immediately!!!",inheritance-claim-verify.tk,4,5,2,1,2,2,1
+Microsoft Account: Your account has been locked due to suspicious activity. Click here to unlock immediately.,microsoft-account-verify-secure.xyz,4,1,2,1,0,1,1
+Western Union Alert: Someone tried to transfer money from your account! Verify identity immediately at confirm-transfer.net,confirm-transfer.net,4,1,2,1,0,0,1
+FedEx Package Delivery: Your package could not be delivered. Update your address at fedex-delivery-track.tk now!,fedex-delivery-track.tk,3,1,1,1,0,0,1
+"IRS Tax Alert: You have a pending tax refund! Click below to claim your refund of $3,420 now!!!",irs-tax-refund-claim.tk,4,3,2,1,0,1,1
+Netflix Account Suspended: Your payment method declined. Update your billing information immediately at netflix-update-billing.xyz,netflix-update-billing.xyz,4,1,2,1,0,1,1
+"Hi John, Thanks for your order. Your package will arrive tomorrow. You can track it at amazon.com with your order number.",amazon.com,1,0,0,0,0,0,0
+Meeting reminder: Team sync tomorrow at 2 PM in Conference Room B. Please review the agenda before the meeting.,company.com,0,0,0,0,0,0,0
+Welcome to GitHub! Your account has been created successfully. You can now create and manage repositories.,github.com,0,0,0,0,0,0,0
+Receipt for your purchase: Order #12345 has been confirmed. Total: $42.99. View details on your account page.,shop.example.com,1,0,0,0,0,0,0
+"Your password was changed successfully. If this was not you, please contact our support team immediately.",support.example.com,0,0,0,0,0,0,0
+Thank you for subscribing to our newsletter. You will receive weekly updates about our latest products and offers.,newsletter.example.com,0,0,0,0,0,0,0
+Your LinkedIn profile was viewed by a recruiter. Visit LinkedIn to see more details about the company.,linkedin.com,0,0,0,0,0,0,0
+Project deadline reminder: The Q4 report is due on Friday. Please submit your completed sections to the shared drive.,company.com,0,0,0,0,0,0,0
+Your flight confirmation: Booking reference ABC123. Your flight departs at 10:30 AM from Terminal 2.,airline.com,0,0,0,0,0,0,0
+Insurance policy renewal: Your annual premium is $450. Your coverage continues through December 2025.,insurance.com,0,0,0,0,0,0,0
+Slack notification: You have a new message from the marketing team. Check your Slack workspace for details.,slack.com,0,0,0,0,0,0,0
+Google Drive share notification: Someone shared a document with you. Check your email to view and edit the file.,drive.google.com,0,0,0,0,0,0,0
+"Bank statement: Your account balance is $5,234.56 as of today. View full statement on our website.",bank.com,0,0,0,0,0,0,0
+Event invitation: You are invited to our company holiday party on December 15th at 6 PM. Please RSVP by December 1st.,company.com,0,0,0,0,0,1,0
+"Book confirmation: Your order for ""Machine Learning Basics"" has been shipped. Tracking number is in your account.",bookstore.com,0,0,0,0,0,0,0
