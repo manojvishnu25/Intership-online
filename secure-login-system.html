@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SecureAuth — Login System</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f1117;
+    --surface: #181c27;
+    --card: #1e2335;
+    --border: #2a3050;
+    --border-focus: #4f6ef7;
+    --text: #e8eaf6;
+    --muted: #7b82a0;
+    --accent: #4f6ef7;
+    --accent-hover: #6b85ff;
+    --danger: #e05252;
+    --danger-bg: #2a1a1a;
+    --success: #3fcf7f;
+    --success-bg: #0f2a1e;
+    --warning: #f0a832;
+    --warning-bg: #2a1f0a;
+    --input-bg: #141824;
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── NAVBAR ── */
+  nav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .nav-brand { font-size: 18px; font-weight: 700; color: var(--accent); letter-spacing: -0.5px; }
+  .nav-brand span { color: var(--text); }
+  #nav-user { font-size: 13px; color: var(--muted); display: none; align-items: center; gap: 10px; }
+  #nav-user .avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--accent); display: flex; align-items: center;
+    justify-content: center; font-size: 12px; font-weight: 700; color: #fff;
+  }
+  #btn-logout {
+    background: transparent; border: 1px solid var(--border);
+    color: var(--muted); padding: 5px 12px; border-radius: 6px;
+    cursor: pointer; font-size: 12px; transition: all .2s;
+  }
+  #btn-logout:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* ── MAIN ── */
+  main {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    padding: 2rem;
+  }
+
+  /* ── SCREENS ── */
+  .screen { display: none; width: 100%; max-width: 420px; }
+  .screen.active { display: block; }
+
+  /* Dashboard is wider */
+  #screen-dashboard { max-width: 680px; }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+  }
+  .card-title {
+    font-size: 22px; font-weight: 700; margin-bottom: 4px;
+  }
+  .card-sub {
+    font-size: 13px; color: var(--muted); margin-bottom: 1.75rem;
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex; gap: 0;
+    background: var(--input-bg);
+    border-radius: var(--radius);
+    padding: 4px;
+    margin-bottom: 1.75rem;
+  }
+  .tab {
+    flex: 1; padding: 8px;
+    text-align: center; font-size: 14px; font-weight: 500;
+    border-radius: 7px; cursor: pointer; color: var(--muted);
+    transition: all .2s; border: none; background: transparent;
+  }
+  .tab.active { background: var(--card); color: var(--text); }
+
+  /* ── FORM ── */
+  .form-group { margin-bottom: 1rem; }
+  label { font-size: 13px; font-weight: 500; color: var(--muted); display: block; margin-bottom: 6px; }
+
+  .input-wrap { position: relative; }
+  .input-wrap .ico {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    font-size: 16px; color: var(--muted); pointer-events: none;
+  }
+  .input-wrap .toggle-pw {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    font-size: 18px; color: var(--muted); cursor: pointer; background: none;
+    border: none; padding: 0; line-height: 1;
+  }
+  .input-wrap .toggle-pw:hover { color: var(--text); }
+
+  input[type="text"], input[type="email"], input[type="password"], input[type="tel"] {
+    width: 100%; padding: 10px 12px 10px 38px;
+    background: var(--input-bg); border: 1px solid var(--border);
+    border-radius: var(--radius); color: var(--text);
+    font-size: 14px; outline: none; transition: border-color .2s;
+  }
+  input[type="text"]:focus, input[type="email"]:focus,
+  input[type="password"]:focus, input[type="tel"]:focus {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px rgba(79,110,247,.15);
+  }
+  input.error { border-color: var(--danger); }
+  .field-error { font-size: 11px; color: var(--danger); margin-top: 4px; }
+
+  /* Strength bar */
+  .strength-bar {
+    height: 3px; border-radius: 2px; background: var(--border);
+    margin-top: 6px; overflow: hidden;
+  }
+  .strength-fill { height: 100%; width: 0; border-radius: 2px; transition: all .3s; }
+  .strength-label { font-size: 11px; margin-top: 4px; }
+
+  /* ── ALERTS ── */
+  .alert {
+    border-radius: var(--radius); padding: 10px 14px;
+    font-size: 13px; margin-bottom: 1rem; display: none;
+  }
+  .alert.danger  { background: var(--danger-bg);  color: var(--danger);  border: 1px solid rgba(224,82,82,.3); }
+  .alert.success { background: var(--success-bg); color: var(--success); border: 1px solid rgba(63,207,127,.3); }
+  .alert.warning { background: var(--warning-bg); color: var(--warning); border: 1px solid rgba(240,168,50,.3); }
+  .alert.show { display: block; }
+
+  /* ── BUTTONS ── */
+  .btn {
+    width: 100%; padding: 11px;
+    border-radius: var(--radius); border: none; cursor: pointer;
+    font-size: 14px; font-weight: 600; transition: all .2s; margin-top: 4px;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-ghost {
+    background: transparent; border: 1px solid var(--border);
+    color: var(--muted); font-size: 13px;
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+  .link-btn {
+    background: none; border: none; color: var(--accent);
+    font-size: 13px; cursor: pointer; padding: 0;
+    text-decoration: underline;
+  }
+  .link-btn:hover { color: var(--accent-hover); }
+
+  .divider {
+    text-align: center; font-size: 12px; color: var(--muted);
+    margin: 1.25rem 0; position: relative;
+  }
+  .divider::before, .divider::after {
+    content: ''; position: absolute; top: 50%;
+    width: calc(50% - 24px); height: 1px; background: var(--border);
+  }
+  .divider::before { left: 0; }
+  .divider::after { right: 0; }
+
+  /* ── 2FA SETUP ── */
+  .totp-box {
+    background: var(--input-bg); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem; text-align: center;
+  }
+  .totp-secret {
+    font-family: monospace; font-size: 16px; letter-spacing: 3px;
+    color: var(--accent); font-weight: 700;
+  }
+  .otp-inputs { display: flex; gap: 8px; justify-content: center; margin-bottom: 1rem; }
+  .otp-inputs input {
+    width: 44px; height: 52px; text-align: center; font-size: 20px;
+    font-weight: 700; padding: 0; border-radius: var(--radius);
+  }
+  .totp-timer {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: var(--muted); justify-content: center; margin-bottom: 1rem;
+  }
+  .timer-ring { width: 28px; height: 28px; }
+
+  /* ── DASHBOARD ── */
+  .welcome-banner {
+    background: linear-gradient(135deg, #1a2240, #1e2a50);
+    border: 1px solid var(--border-focus);
+    border-radius: var(--radius-lg); padding: 1.5rem;
+    margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem;
+  }
+  .welcome-avatar {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: var(--accent); display: flex; align-items: center;
+    justify-content: center; font-size: 22px; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .welcome-text h2 { font-size: 20px; margin-bottom: 4px; }
+  .welcome-text p { font-size: 13px; color: var(--muted); }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+  .stat-card {
+    background: var(--input-bg); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1rem; text-align: center;
+  }
+  .stat-icon { font-size: 22px; margin-bottom: 6px; }
+  .stat-val { font-size: 20px; font-weight: 700; }
+  .stat-lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .security-section h3 { font-size: 14px; font-weight: 600; color: var(--muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: .5px; }
+  .security-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+  }
+  .security-row:last-child { border-bottom: none; }
+  .sec-left { display: flex; align-items: center; gap: 10px; }
+  .sec-icon { font-size: 20px; }
+  .sec-info h4 { font-size: 14px; font-weight: 500; }
+  .sec-info p { font-size: 12px; color: var(--muted); }
+  .badge {
+    font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600;
+  }
+  .badge-green { background: var(--success-bg); color: var(--success); }
+  .badge-yellow { background: var(--warning-bg); color: var(--warning); }
+  .badge-gray { background: var(--border); color: var(--muted); }
+
+  /* session log */
+  .session-log {
+    background: var(--input-bg); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: .75rem 1rem; margin-top: 1.5rem;
+  }
+  .session-log h3 { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+  .log-entry {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 12px; padding: 6px 0; border-bottom: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .log-entry:last-child { border-bottom: none; }
+  .log-entry .evt { color: var(--text); font-weight: 500; }
+  .log-entry .ts { font-size: 11px; }
+
+  /* Loading spinner */
+  .spinner {
+    display: inline-block; width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,.3); border-top-color: #fff;
+    border-radius: 50%; animation: spin .7s linear infinite;
+    vertical-align: middle; margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Checkbox */
+  .check-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); margin-bottom: 1rem; }
+  input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
+
+  /* footer note */
+  .footnote { text-align: center; font-size: 12px; color: var(--muted); margin-top: 1rem; }
+
+  @media (max-width: 500px) {
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .card { padding: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">Secure<span>Auth</span></div>
+  <div id="nav-user">
+    <div class="avatar" id="nav-avatar">–</div>
+    <span id="nav-username">–</span>
+    <button id="btn-logout">Sign out</button>
+  </div>
+</nav>
+
+<main>
+
+  <!-- ══════════ AUTH SCREEN ══════════ -->
+  <div class="screen active" id="screen-auth">
+    <div class="card">
+      <p class="card-title" id="auth-title">Welcome back</p>
+      <p class="card-sub" id="auth-sub">Sign in to your account</p>
+
+      <div class="tabs">
+        <button class="tab active" id="tab-login" onclick="switchTab('login')">Sign In</button>
+        <button class="tab" id="tab-register" onclick="switchTab('register')">Register</button>
+      </div>
+
+      <div id="alert-auth" class="alert"></div>
+
+      <!-- ── LOGIN FORM ── -->
+      <div id="form-login">
+        <div class="form-group">
+          <label>Email address</label>
+          <div class="input-wrap">
+            <span class="ico">✉</span>
+            <input type="email" id="login-email" placeholder="you@example.com" autocomplete="username" />
+          </div>
+          <div class="field-error" id="err-login-email"></div>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <div class="input-wrap">
+            <span class="ico">🔒</span>
+            <input type="password" id="login-pw" placeholder="••••••••" autocomplete="current-password" />
+            <button class="toggle-pw" onclick="togglePw('login-pw',this)" tabindex="-1">👁</button>
+          </div>
+          <div class="field-error" id="err-login-pw"></div>
+        </div>
+        <div class="check-row">
+          <input type="checkbox" id="remember-me" />
+          <label for="remember-me" style="cursor:pointer;font-size:13px;">Remember me for 30 days</label>
+        </div>
+        <button class="btn btn-primary" onclick="doLogin()">Sign In</button>
+        <div class="footnote" style="margin-top:.75rem;">
+          <button class="link-btn" onclick="showForgot()">Forgot password?</button>
+        </div>
+      </div>
+
+      <!-- ── REGISTER FORM ── -->
+      <div id="form-register" style="display:none">
+        <div class="form-group">
+          <label>Full name</label>
+          <div class="input-wrap">
+            <span class="ico">👤</span>
+            <input type="text" id="reg-name" placeholder="Jane Doe" autocomplete="name" />
+          </div>
+          <div class="field-error" id="err-reg-name"></div>
+        </div>
+        <div class="form-group">
+          <label>Email address</label>
+          <div class="input-wrap">
+            <span class="ico">✉</span>
+            <input type="email" id="reg-email" placeholder="you@example.com" autocomplete="username" />
+          </div>
+          <div class="field-error" id="err-reg-email"></div>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <div class="input-wrap">
+            <span class="ico">🔒</span>
+            <input type="password" id="reg-pw" placeholder="Min 8 chars" autocomplete="new-password" oninput="checkStrength(this.value)" />
+            <button class="toggle-pw" onclick="togglePw('reg-pw',this)" tabindex="-1">👁</button>
+          </div>
+          <div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div>
+          <div class="strength-label" id="strength-label"></div>
+          <div class="field-error" id="err-reg-pw"></div>
+        </div>
+        <div class="form-group">
+          <label>Confirm password</label>
+          <div class="input-wrap">
+            <span class="ico">🔒</span>
+            <input type="password" id="reg-pw2" placeholder="Repeat password" autocomplete="new-password" />
+          </div>
+          <div class="field-error" id="err-reg-pw2"></div>
+        </div>
+        <div class="check-row">
+          <input type="checkbox" id="enable-2fa" />
+          <label for="enable-2fa" style="cursor:pointer;font-size:13px;">Enable Two-Factor Authentication (2FA) — recommended</label>
+        </div>
+        <button class="btn btn-primary" onclick="doRegister()">Create account</button>
+      </div>
+    </div>
+    <div class="footnote" style="margin-top:1rem;">
+      🔒 Passwords hashed with PBKDF2-SHA256 · Session secured · Input sanitised
+    </div>
+  </div>
+
+  <!-- ══════════ 2FA SETUP SCREEN ══════════ -->
+  <div class="screen" id="screen-2fa-setup">
+    <div class="card">
+      <p class="card-title">Set up 2FA</p>
+      <p class="card-sub">Save this secret in an authenticator app (Google Authenticator, Authy)</p>
+      <div class="alert warning show">⚠ This is a simulated TOTP secret. In production use a QR code library.</div>
+      <div class="totp-box">
+        <p style="font-size:12px;color:var(--muted);margin-bottom:6px;">Your secret key</p>
+        <div class="totp-secret" id="totp-secret-display"></div>
+        <p style="font-size:11px;color:var(--muted);margin-top:6px;">Enter this key in your authenticator app</p>
+      </div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px;">Enter the 6-digit code from your app to verify setup:</p>
+      <div class="otp-inputs" id="otp-setup-inputs"></div>
+      <div id="alert-2fa-setup" class="alert"></div>
+      <button class="btn btn-primary" onclick="verify2FASetup()">Verify &amp; Activate 2FA</button>
+      <div class="divider">or</div>
+      <button class="btn btn-ghost" onclick="skip2FA()">Skip for now</button>
+    </div>
+  </div>
+
+  <!-- ══════════ 2FA VERIFY SCREEN ══════════ -->
+  <div class="screen" id="screen-2fa-verify">
+    <div class="card">
+      <p class="card-title">Two-Factor Auth</p>
+      <p class="card-sub">Enter the 6-digit code from your authenticator app</p>
+      <div class="totp-timer">
+        <svg class="timer-ring" viewBox="0 0 28 28">
+          <circle cx="14" cy="14" r="11" fill="none" stroke="var(--border)" stroke-width="2.5"/>
+          <circle cx="14" cy="14" r="11" fill="none" stroke="var(--accent)" stroke-width="2.5"
+            stroke-dasharray="69.1" stroke-dashoffset="0" id="timer-arc"
+            stroke-linecap="round" transform="rotate(-90 14 14)"/>
+        </svg>
+        <span id="timer-text">30s</span>
+        <span style="color:var(--muted)">until code refreshes</span>
+      </div>
+      <div class="otp-inputs" id="otp-verify-inputs"></div>
+      <div id="alert-2fa-verify" class="alert"></div>
+      <button class="btn btn-primary" onclick="verify2FALogin()">Verify</button>
+      <div class="divider">or</div>
+      <button class="btn btn-ghost" onclick="showScreen('screen-auth')">← Back to login</button>
+    </div>
+  </div>
+
+  <!-- ══════════ FORGOT PASSWORD ══════════ -->
+  <div class="screen" id="screen-forgot">
+    <div class="card">
+      <p class="card-title">Reset password</p>
+      <p class="card-sub">Enter your email to receive a reset link</p>
+      <div id="alert-forgot" class="alert"></div>
+      <div class="form-group">
+        <label>Email address</label>
+        <div class="input-wrap">
+          <span class="ico">✉</span>
+          <input type="email" id="forgot-email" placeholder="you@example.com" />
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="doForgot()">Send reset link</button>
+      <div class="divider">or</div>
+      <button class="btn btn-ghost" onclick="showScreen('screen-auth')">← Back to login</button>
+    </div>
+  </div>
+
+  <!-- ══════════ DASHBOARD ══════════ -->
+  <div class="screen" id="screen-dashboard">
+    <div class="welcome-banner">
+      <div class="welcome-avatar" id="dash-avatar"></div>
+      <div class="welcome-text">
+        <h2>Welcome back, <span id="dash-name"></span> 👋</h2>
+        <p id="dash-email-display"></p>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">🔐</div>
+        <div class="stat-val" id="stat-sessions">1</div>
+        <div class="stat-lbl">Active sessions</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📅</div>
+        <div class="stat-val" id="stat-joined"></div>
+        <div class="stat-lbl">Account created</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🕑</div>
+        <div class="stat-val" id="stat-login"></div>
+        <div class="stat-lbl">Last login</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:1rem;">
+      <div class="security-section">
+        <h3>Security Status</h3>
+        <div class="security-row">
+          <div class="sec-left">
+            <span class="sec-icon">🔑</span>
+            <div class="sec-info">
+              <h4>Password</h4>
+              <p>Hashed with PBKDF2-SHA256 (310,000 iterations)</p>
+            </div>
+          </div>
+          <span class="badge badge-green">Protected</span>
+        </div>
+        <div class="security-row">
+          <div class="sec-left">
+            <span class="sec-icon">📱</span>
+            <div class="sec-info">
+              <h4>Two-Factor Authentication</h4>
+              <p id="tfa-status-text">—</p>
+            </div>
+          </div>
+          <span class="badge" id="tfa-badge">—</span>
+        </div>
+        <div class="security-row">
+          <div class="sec-left">
+            <span class="sec-icon">🛡</span>
+            <div class="sec-info">
+              <h4>SQL Injection Protection</h4>
+              <p>Parameterised queries / input sanitisation active</p>
+            </div>
+          </div>
+          <span class="badge badge-green">Active</span>
+        </div>
+        <div class="security-row">
+          <div class="sec-left">
+            <span class="sec-icon">🍪</span>
+            <div class="sec-info">
+              <h4>Session Token</h4>
+              <p id="session-token-display" style="font-family:monospace;font-size:11px;"></p>
+            </div>
+          </div>
+          <span class="badge badge-green">Valid</span>
+        </div>
+        <div class="security-row">
+          <div class="sec-left">
+            <span class="sec-icon">⏱</span>
+            <div class="sec-info">
+              <h4>Session Timeout</h4>
+              <p id="timeout-display">—</p>
+            </div>
+          </div>
+          <span class="badge badge-yellow">Active</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="session-log">
+      <h3>Activity log</h3>
+      <div id="activity-log"></div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+/* ════════════════════════════════════════════════
+   UTILITY
+════════════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+
+function sanitise(str) {
+  /* Escapes HTML special chars — prevents XSS / injection display */
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function validateEmail(e) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+}
+
+function randomBytes(n) {
+  const a = new Uint8Array(n);
+  crypto.getRandomValues(a);
+  return a;
+}
+
+function bytesToHex(b) {
+  return Array.from(b).map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+
+function generateToken(len=32) {
+  return bytesToHex(randomBytes(len));
+}
+
+/* ── PBKDF2 password hashing (Web Crypto API) ── */
+async function hashPassword(password) {
+  const salt = randomBytes(16);
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']
+  );
+  const bits = await crypto.subtle.deriveBits({
+    name:'PBKDF2', salt, iterations:310000, hash:'SHA-256'
+  }, keyMaterial, 256);
+  return { salt: bytesToHex(salt), hash: bytesToHex(new Uint8Array(bits)) };
+}
+
+async function verifyPassword(password, saltHex, storedHash) {
+  const salt = new Uint8Array(saltHex.match(/.{2}/g).map(b=>parseInt(b,16)));
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']
+  );
+  const bits = await crypto.subtle.deriveBits({
+    name:'PBKDF2', salt, iterations:310000, hash:'SHA-256'
+  }, keyMaterial, 256);
+  return bytesToHex(new Uint8Array(bits)) === storedHash;
+}
+
+/* ── Password strength ── */
+function checkStrength(pw) {
+  let score = 0;
+  if (pw.length >= 8)  score++;
+  if (pw.length >= 12) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  const fill = $('strength-fill');
+  const lbl  = $('strength-label');
+  const cols = ['#e05252','#f0a832','#f0a832','#3fcf7f','#3fcf7f'];
+  const lbls = ['Very weak','Weak','Fair','Strong','Very strong'];
+  fill.style.width  = (score/5*100)+'%';
+  fill.style.background = cols[Math.max(0,score-1)] || cols[0];
+  lbl.textContent = pw ? lbls[Math.max(0,score-1)] : '';
+  lbl.style.color = cols[Math.max(0,score-1)] || cols[0];
+}
+
+/* ── Toggle password visibility ── */
+function togglePw(id, btn) {
+  const inp = $(id);
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  btn.textContent = inp.type === 'password' ? '👁' : '🙈';
+}
+
+/* ── Alert helper ── */
+function showAlert(id, type, msg) {
+  const el = $(id);
+  el.className = `alert ${type} show`;
+  el.textContent = msg;
+}
+function hideAlert(id) {
+  $(id).className = 'alert';
+}
+
+/* ── Field error ── */
+function setErr(id, msg) { $(id).textContent = msg; }
+function clearErrs(...ids) { ids.forEach(id => $(id).textContent = ''); }
+
+/* ════════════════════════════════════════════════
+   STORAGE  (in-memory "database")
+════════════════════════════════════════════════ */
+const DB = {
+  users: {},   /* email -> { name, email, saltHex, hashHex, twoFA, secret, joinedAt } */
+  sessions: {} /* token -> { email, expires, createdAt } */
+};
+
+/* ════════════════════════════════════════════════
+   SESSION
+════════════════════════════════════════════════ */
+let currentSession = null;   /* { token, email, expires } */
+const SESSION_TTL = 30 * 60 * 1000; /* 30 minutes */
+
+function createSession(email, remember=false) {
+  const token = generateToken();
+  const ttl = remember ? 30*24*60*60*1000 : SESSION_TTL;
+  const s = { email, token, expires: Date.now()+ttl, createdAt: new Date() };
+  DB.sessions[token] = s;
+  currentSession = s;
+  scheduleTimeout(ttl);
+  return s;
+}
+
+let timeoutHandle = null;
+function scheduleTimeout(ttl) {
+  clearTimeout(timeoutHandle);
+  timeoutHandle = setTimeout(() => {
+    if (currentSession) {
+      addLog('Session expired');
+      logout(true);
+    }
+  }, ttl);
+}
+
+function logout(expired=false) {
+  if (currentSession) delete DB.sessions[currentSession.token];
+  currentSession = null;
+  clearTimeout(timeoutHandle);
+  $('nav-user').style.display = 'none';
+  addLog(expired ? 'Auto-logout (session expired)' : 'User signed out');
+  showScreen('screen-auth');
+  if (expired) setTimeout(()=>showAlert('alert-auth','warning','Your session expired. Please sign in again.'),100);
+}
+
+/* ════════════════════════════════════════════════
+   ACTIVITY LOG
+════════════════════════════════════════════════ */
+const activityLog = [];
+function addLog(event) {
+  activityLog.unshift({ event, ts: new Date().toLocaleTimeString() });
+  if (activityLog.length > 8) activityLog.pop();
+  renderLog();
+}
+
+function renderLog() {
+  const el = $('activity-log');
+  if (!el) return;
+  el.innerHTML = activityLog.map(l =>
+    `<div class="log-entry"><span class="evt">${sanitise(l.event)}</span><span class="ts">${l.ts}</span></div>`
+  ).join('');
+}
+
+/* ════════════════════════════════════════════════
+   SCREEN MANAGEMENT
+════════════════════════════════════════════════ */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $(id).classList.add('active');
+}
+
+function switchTab(tab) {
+  $('tab-login').classList.toggle('active', tab==='login');
+  $('tab-register').classList.toggle('active', tab==='register');
+  $('form-login').style.display    = tab==='login'    ? '' : 'none';
+  $('form-register').style.display = tab==='register' ? '' : 'none';
+  $('auth-title').textContent = tab==='login' ? 'Welcome back' : 'Create account';
+  $('auth-sub').textContent   = tab==='login' ? 'Sign in to your account' : 'Join SecureAuth today';
+  hideAlert('alert-auth');
+}
+
+/* ════════════════════════════════════════════════
+   REGISTER
+════════════════════════════════════════════════ */
+async function doRegister() {
+  hideAlert('alert-auth');
+  const name  = $('reg-name').value.trim();
+  const email = $('reg-email').value.trim().toLowerCase();
+  const pw    = $('reg-pw').value;
+  const pw2   = $('reg-pw2').value;
+  const want2FA = $('enable-2fa').checked;
+
+  clearErrs('err-reg-name','err-reg-email','err-reg-pw','err-reg-pw2');
+  let valid = true;
+
+  if (!name || name.length < 2) { setErr('err-reg-name','Enter your full name'); valid=false; }
+  if (!validateEmail(email))     { setErr('err-reg-email','Enter a valid email address'); valid=false; }
+  if (DB.users[email])           { setErr('err-reg-email','An account with this email already exists'); valid=false; }
+  if (pw.length < 8)             { setErr('err-reg-pw','Password must be at least 8 characters'); valid=false; }
+  if (pw !== pw2)                { setErr('err-reg-pw2','Passwords do not match'); valid=false; }
+
+  if (!valid) return;
+
+  /* Disable button & show spinner */
+  const btn = document.querySelector('#form-register .btn-primary');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Creating account…';
+
+  const { salt, hash } = await hashPassword(pw);
+
+  DB.users[email] = {
+    name: sanitise(name), email,
+    saltHex: salt, hashHex: hash,
+    twoFA: false, secret: null,
+    joinedAt: new Date()
+  };
+
+  addLog(`Account registered: ${email}`);
+  btn.disabled = false;
+  btn.innerHTML = 'Create account';
+
+  if (want2FA) {
+    /* Temporarily store email for 2FA setup */
+    pendingEmail = email;
+    show2FASetup(email);
+  } else {
+    showAlert('alert-auth','success','Account created! Please sign in.');
+    switchTab('login');
+    $('login-email').value = email;
+  }
+}
+
+/* ════════════════════════════════════════════════
+   LOGIN
+════════════════════════════════════════════════ */
+let pendingEmail = null; /* set during 2FA flow */
+
+async function doLogin() {
+  hideAlert('alert-auth');
+  const email = $('login-email').value.trim().toLowerCase();
+  const pw    = $('login-pw').value;
+  const remember = $('remember-me').checked;
+
+  clearErrs('err-login-email','err-login-pw');
+  let valid = true;
+
+  if (!validateEmail(email)) { setErr('err-login-email','Enter a valid email address'); valid=false; }
+  if (!pw)                   { setErr('err-login-pw','Enter your password'); valid=false; }
+  if (!valid) return;
+
+  const btn = document.querySelector('#form-login .btn-primary');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Signing in…';
+
+  await new Promise(r=>setTimeout(r,200)); /* subtle delay */
+
+  const user = DB.users[email];
+  if (!user) {
+    btn.disabled=false; btn.innerHTML='Sign In';
+    showAlert('alert-auth','danger','Invalid email or password.');
+    addLog(`Failed login attempt: ${email}`);
+    return;
+  }
+
+  const ok = await verifyPassword(pw, user.saltHex, user.hashHex);
+  btn.disabled=false; btn.innerHTML='Sign In';
+
+  if (!ok) {
+    showAlert('alert-auth','danger','Invalid email or password.');
+    addLog(`Failed login attempt: ${email}`);
+    return;
+  }
+
+  addLog(`Password verified: ${email}`);
+
+  if (user.twoFA) {
+    pendingEmail = email;
+    pendingRemember = remember;
+    show2FAVerify();
+  } else {
+    const s = createSession(email, remember);
+    addLog(`Session started (token …${s.token.slice(-8)})`);
+    loadDashboard(email);
+  }
+}
+
+let pendingRemember = false;
+
+/* ════════════════════════════════════════════════
+   2FA  (simulated TOTP — uses incrementing counter
+         for demo; displays "current" code)
+════════════════════════════════════════════════ */
+function generateTotpSecret() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  return Array.from(randomBytes(16)).map(b=>chars[b%32]).join('');
+}
+
+/* Simulated TOTP: code = last 6 digits of (UNIX 30s window * secret hash) */
+async function currentTOTP(secret) {
+  const window = Math.floor(Date.now() / 30000);
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey('raw', enc.encode(secret), {name:'HMAC',hash:'SHA-1'}, false, ['sign']);
+  const buf = new Uint8Array(8);
+  new DataView(buf.buffer).setUint32(4, window, false);
+  const sig = await crypto.subtle.sign('HMAC', key, buf);
+  const view = new DataView(sig);
+  const offset = view.getUint8(19) & 0xf;
+  const code = (view.getUint32(offset) & 0x7fffffff) % 1000000;
+  return String(code).padStart(6,'0');
+}
+
+let totpSecret = null;
+
+function buildOtpInputs(containerId, onComplete) {
+  const c = $(containerId);
+  c.innerHTML = '';
+  for (let i=0;i<6;i++) {
+    const inp = document.createElement('input');
+    inp.type='tel'; inp.maxLength=1; inp.inputMode='numeric';
+    inp.setAttribute('pattern','[0-9]');
+    inp.addEventListener('input', e => {
+      e.target.value = e.target.value.replace(/\D/,'');
+      if (e.target.value && i<5) c.children[i+1].focus();
+      const val = Array.from(c.children).map(x=>x.value).join('');
+      if (val.length===6) onComplete(val);
+    });
+    inp.addEventListener('keydown', e => {
+      if (e.key==='Backspace' && !e.target.value && i>0) c.children[i-1].focus();
+    });
+    inp.addEventListener('paste', e => {
+      const p = (e.clipboardData||window.clipboardData).getData('text').replace(/\D/g,'').slice(0,6);
+      if (p.length===6) {
+        Array.from(c.children).forEach((x,idx)=>x.value=p[idx]||'');
+        onComplete(p);
+        e.preventDefault();
+      }
+    });
+    c.appendChild(inp);
+  }
+  c.children[0].focus();
+}
+
+function getOtpValue(containerId) {
+  return Array.from($(containerId).children).map(x=>x.value).join('');
+}
+
+function clearOtpInputs(containerId) {
+  Array.from($(containerId).children).forEach(x=>x.value='');
+  $(containerId).children[0].focus();
+}
+
+/* ── 2FA Setup ── */
+function show2FASetup(email) {
+  totpSecret = generateTotpSecret();
+  $('totp-secret-display').textContent = totpSecret;
+  buildOtpInputs('otp-setup-inputs', ()=>{});
+  hideAlert('alert-2fa-setup');
+  showScreen('screen-2fa-setup');
+
+  /* Show the current code hint for demo */
+  currentTOTP(totpSecret).then(code => {
+    showAlert('alert-2fa-setup','warning',
+      `Demo mode: your current code is ${code} (refreshes every 30s)`);
+  });
+}
+
+async function verify2FASetup() {
+  const code = getOtpValue('otp-setup-inputs');
+  if (code.length !== 6) { showAlert('alert-2fa-setup','danger','Enter the 6-digit code'); return; }
+
+  const expected = await currentTOTP(totpSecret);
+  if (code !== expected) {
+    showAlert('alert-2fa-setup','danger','Incorrect code. Try again.');
+    clearOtpInputs('otp-setup-inputs');
+    return;
+  }
+
+  const user = DB.users[pendingEmail];
+  user.twoFA = true; user.secret = totpSecret;
+  addLog(`2FA enabled for ${pendingEmail}`);
+  showAlert('alert-auth','success','2FA enabled! Account created — please sign in.');
+  switchTab('login');
+  $('login-email').value = pendingEmail;
+  pendingEmail = null;
+  showScreen('screen-auth');
+}
+
+function skip2FA() {
+  showAlert('alert-auth','success','Account created! Please sign in.');
+  $('login-email').value = pendingEmail;
+  switchTab('login');
+  pendingEmail = null;
+  showScreen('screen-auth');
+}
+
+/* ── 2FA Verify (login) ── */
+let timerInterval = null;
+
+function show2FAVerify() {
+  buildOtpInputs('otp-verify-inputs', ()=>{});
+  hideAlert('alert-2fa-verify');
+  showScreen('screen-2fa-verify');
+  startTimer();
+
+  const user = DB.users[pendingEmail];
+  currentTOTP(user.secret).then(code => {
+    showAlert('alert-2fa-verify','warning',`Demo mode: current code is ${code}`);
+  });
+}
+
+function startTimer() {
+  clearInterval(timerInterval);
+  function tick() {
+    const rem = 30 - (Math.floor(Date.now()/1000) % 30);
+    $('timer-text').textContent = rem+'s';
+    const offset = 69.1 * (1 - rem/30);
+    $('timer-arc').setAttribute('stroke-dashoffset', offset);
+    if (rem===30) {
+      const user = DB.users[pendingEmail];
+      if (user) currentTOTP(user.secret).then(code=>{
+        showAlert('alert-2fa-verify','warning',`Demo mode: current code is ${code}`);
+      });
+    }
+  }
+  tick();
+  timerInterval = setInterval(tick, 1000);
+}
+
+async function verify2FALogin() {
+  const code = getOtpValue('otp-verify-inputs');
+  if (code.length !== 6) { showAlert('alert-2fa-verify','danger','Enter the 6-digit code'); return; }
+
+  const user = DB.users[pendingEmail];
+  const expected = await currentTOTP(user.secret);
+
+  if (code !== expected) {
+    showAlert('alert-2fa-verify','danger','Incorrect code. Try again.');
+    clearOtpInputs('otp-verify-inputs');
+    return;
+  }
+
+  clearInterval(timerInterval);
+  const s = createSession(pendingEmail, pendingRemember);
+  addLog(`2FA verified — session started (…${s.token.slice(-8)})`);
+  pendingEmail = null;
+  loadDashboard(s.email);
+}
+
+/* ════════════════════════════════════════════════
+   FORGOT PASSWORD
+════════════════════════════════════════════════ */
+function showForgot() { hideAlert('alert-forgot'); showScreen('screen-forgot'); }
+
+function doForgot() {
+  const email = $('forgot-email').value.trim().toLowerCase();
+  if (!validateEmail(email)) { showAlert('alert-forgot','danger','Enter a valid email address.'); return; }
+  /* Simulate — always show same message to prevent user enumeration */
+  showAlert('alert-forgot','success','If an account exists for that email, a reset link has been sent.');
+  addLog(`Password reset requested: ${email}`);
+}
+
+/* ════════════════════════════════════════════════
+   DASHBOARD
+════════════════════════════════════════════════ */
+function loadDashboard(email) {
+  const user = DB.users[email];
+  const initials = user.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+
+  /* Navbar */
+  $('nav-avatar').textContent = initials;
+  $('nav-username').textContent = sanitise(user.name);
+  $('nav-user').style.display = 'flex';
+
+  /* Welcome */
+  $('dash-avatar').textContent = initials;
+  $('dash-name').textContent = sanitise(user.name.split(' ')[0]);
+  $('dash-email-display').textContent = sanitise(email);
+
+  /* Stats */
+  $('stat-sessions').textContent = '1';
+  $('stat-joined').textContent = user.joinedAt.toLocaleDateString();
+  $('stat-login').textContent = new Date().toLocaleTimeString();
+
+  /* 2FA badge */
+  $('tfa-badge').className = 'badge ' + (user.twoFA ? 'badge-green' : 'badge-yellow');
+  $('tfa-badge').textContent = user.twoFA ? 'Enabled' : 'Disabled';
+  $('tfa-status-text').textContent = user.twoFA ? 'TOTP authenticator connected' : 'Not configured — enable for extra security';
+
+  /* Session token */
+  $('session-token-display').textContent = '…' + currentSession.token.slice(-20);
+  const exp = new Date(currentSession.expires);
+  $('timeout-display').textContent = `Expires at ${exp.toLocaleTimeString()}`;
+
+  renderLog();
+  showScreen('screen-dashboard');
+}
+
+/* ════════════════════════════════════════════════
+   EVENTS
+════════════════════════════════════════════════ */
+$('btn-logout').addEventListener('click', ()=>logout());
+
+/* Enter key support */
+$('login-pw').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+$('login-email').addEventListener('keydown', e=>{ if(e.key==='Enter') $('login-pw').focus(); });
+$('reg-pw2').addEventListener('keydown', e=>{ if(e.key==='Enter') doRegister(); });
+$('forgot-email').addEventListener('keydown', e=>{ if(e.key==='Enter') doForgot(); });
+
+/* ── Pre-seed a demo user ── */
+(async()=>{
+  const { salt, hash } = await hashPassword('Demo@1234');
+  DB.users['demo@example.com'] = {
+    name: 'Demo User', email:'demo@example.com',
+    saltHex: salt, hashHex: hash,
+    twoFA: false, secret: null,
+    joinedAt: new Date()
+  };
+})();
+</script>
+</body>
+</html>
